@@ -72,6 +72,7 @@ app.route("/login")
 // get register page
 app.route("/register")
 
+
 .get(function(req, res){
     res.render("register");
 })
