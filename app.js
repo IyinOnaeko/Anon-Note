@@ -5,8 +5,10 @@ const ejs = require("ejs");
 const bodyParser =  require("body-parser");
 const mongoose = require("mongoose");
 // const encrypt = require("mongoose-encryption");
-const md5 = require("md5");
-
+// const md5 = require("md5");
+const bycrypt = require("bcrypt");
+//add number of salt rounds for bycrpyt
+const saltRounds = 10;
 
 
 const app = express();
@@ -16,6 +18,7 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+
 
 
 const link = process.env.URL;
@@ -39,6 +42,32 @@ app.get("/", function(req, res){
     res.render("home");
 })
 
+// get register page
+app.route("/register")
+
+.get(function(req, res){
+    res.render("register");
+})
+
+.post(function(req, res){
+    const password = req.body.password;
+    bycrypt.hash(password, saltRounds, function(err, hash){
+        const newUser = new User ({
+            email : req.body.username,
+            password : hash
+        });
+    
+        newUser.save(function(err){
+            if(err) {
+                console.log(err);
+            } else {
+                res.render("secrets");
+            }
+        })
+    })
+   
+})
+
 
 //route for login 
 app.route("/login")
@@ -52,45 +81,23 @@ app.route("/login")
 .post(function(req, res){
     //store username and password
     const userName = req.body.username;
-    const password = md5(req.body.password);
+    const password = req.body.password;
 
     User.findOne({email: userName}, function(err, foundUser){
         if(err) {
             console.log(err)
         } else {
             if(foundUser){
-                if(foundUser.password === password) {
-                    res.render("secrets")
+                bycrypt.compare(password, foundUser.password, function(err, result) {
+                     if (result) {
+                        res.render("secrets")
+                    } 
+                });
                 }
             }
-        }
-    })
-})
-
-
-
-// get register page
-app.route("/register")
-
-
-.get(function(req, res){
-    res.render("register");
-})
-
-.post(function(req, res){
-    const newUser = new User ({
-        email : req.body.username,
-        password : md5(req.body.password)
+        })
     });
 
-    newUser.save(function(err){
-        if(err) {
-            console.log(err);
-        } else {
-            res.render("secrets");
-        }
-    })
-})
 
 
 
