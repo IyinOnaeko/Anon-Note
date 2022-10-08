@@ -59,7 +59,6 @@ app.route("/login")
             console.log(err)
         } else {
             if(foundUser){
-                console.log(foundUser);
                 if(foundUser.password === password) {
                     res.render("secrets")
                 }
