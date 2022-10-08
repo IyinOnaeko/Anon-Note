@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({
 
 //setup app to use sessions
 app.use(session({
-    secret: "Our little secret",
+    secret: process.env.SESH,
     resave: false,
     saveUninitialized: false
 }))
@@ -49,6 +49,7 @@ const User = new mongoose.model("User", userSchema);
 
 passport.use(User.createStrategy());
 
+
 passport.serializeUser(User.serializeUser())
 passport.deserializeUser(User.deserializeUser());
 
@@ -57,6 +58,8 @@ app.get("/", function(req, res){
     res.render("home");
 })
 
+
+//route for secrets - route only comes up if user is logged in and authenticated
 app.route("/secrets")
 
 .get(function(req, res){
@@ -67,7 +70,7 @@ app.route("/secrets")
     }
 })
 
-// get register page
+//////////////get register page////////////////////
 app.route("/register")
 
 .get(function(req, res){
@@ -75,11 +78,13 @@ app.route("/register")
 })
 
 .post(function(req, res){
+    //register acts as mailman to create document and save to db using passport
    User.register({username: req.body.username}, req.body.password, function(err, user){
     if (err){
         console.log(err);
         res.redirect("/register");
     } else{
+        //user authentication and login for secrets route
         passport.authenticate("local")(req, res, function(){
             res.redirect("/secrets");
         })
@@ -91,7 +96,7 @@ app.route("/register")
 //route for login 
 app.route("/login")
 
-//get login page
+///////////get login page//////////////////
 .get(function(req, res){
     res.render("login");
 })
@@ -107,19 +112,27 @@ app.route("/login")
         if(err) {
             console.log(err);
         } else {
-            passport.authenticate("local");
+            passport.authenticate("local")(req, res, function(){
+                res.redirect("secrets");
+            });
         }
     })
 
     });
 
 
-//create logout route
+/////////////create logout route////////////////////
 app.route("/logout")
 
 .get(function(req, res){
-    req.logout();
-    res.redirect("/");
+    req.logout(function(err){
+        if (err) {
+            console.log(err)
+        } else {
+            res.redirect("/");
+        }
+    });
+    
 
 })
 
