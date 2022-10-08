@@ -3,7 +3,8 @@ const express = require("express");
 const ejs = require("ejs");
 const bodyParser =  require("body-parser");
 const mongoose = require("mongoose");
-require("dotenv").config()
+require("dotenv").config();
+const encrypt = require("mongoose-encryption");
 
 
 
@@ -20,12 +21,17 @@ const link = process.env.URL;
 // connect mongoose with mongoDB
 mongoose.connect(link, {useNewUrlParser: true});
 
-const userSchema = {
+const userSchema = new mongoose.Schema({
     email: String,
     password: String
-};
+});
+
+//create encryption
+const secret = process.env.SEC;
+userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]});
 
 const User = new mongoose.model("User", userSchema);
+
 
 //get home page
 app.get("/", function(req, res){
@@ -41,7 +47,9 @@ app.route("/login")
     res.render("login");
 })
 
+//post request 
 .post(function(req, res){
+    //store username and password
     const userName = req.body.username;
     const password = req.body.password;
 
@@ -50,6 +58,7 @@ app.route("/login")
             console.log(err)
         } else {
             if(foundUser){
+                console.log(foundUser);
                 if(foundUser.password === password) {
                     res.render("secrets")
                 }
